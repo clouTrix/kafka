@@ -48,8 +48,24 @@ public class ProcessorStateManager implements StateManager {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessorStateManager.class);
 
-    public static final String STATE_CHANGELOG_TOPIC_SUFFIX = "-changelog";
-    public static final String CHECKPOINT_FILE_NAME = ".checkpoint";
+    public static final String DEFAULT_STATE_CHANGELOG_TOPIC_SUFFIX = "-changelog";
+    static final String CHECKPOINT_FILE_NAME = ".checkpoint";
+
+    static private String CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX = null;
+    static private String CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX = null;
+
+    public static void setCustomTopicName(final String prefix, final String suffix) {
+        if(null == prefix || null == suffix) {
+            throw new IllegalArgumentException("Custom topic name can not contain 'null'");
+        }
+
+        if(null != CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX || null != CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX) {
+            throw new IllegalArgumentException(String.format("Custom topic name already configured: %s, %s", CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX, CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX));
+        }
+
+        CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX = prefix;
+        CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX = suffix;
+    }
 
     private final File baseDir;
     private final TaskId taskId;
@@ -119,8 +135,12 @@ public class ProcessorStateManager implements StateManager {
     }
 
 
-    public static String storeChangelogTopic(String applicationId, String storeName) {
-        return applicationId + "-" + storeName + STATE_CHANGELOG_TOPIC_SUFFIX;
+    public static String storeChangelogTopic(final String applicationId, final String storeName) {
+        if(null != CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX && null != CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX) {
+            return CUSTOM_STATE_CHANGELOG_TOPIC_PREFIX + storeName + CUSTOM_STATE_CHANGELOG_TOPIC_SUFFIX;
+        }
+
+        return applicationId + "-" + storeName + DEFAULT_STATE_CHANGELOG_TOPIC_SUFFIX;
     }
 
     public File baseDir() {
